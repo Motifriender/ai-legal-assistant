@@ -1,13 +1,9 @@
 // lib/ai-tools.ts
-import {
-  tool,
-  type UIDataTypes,
-  type UIMessage,
-  type InferUITools,
-} from "ai";
+import { tool } from "ai";
 import { z } from "zod";
 // If you want to really call Retell later, install and import the SDK:
 // import Retell from "retell-sdk";
+
 
 /**
  * Chat AI Agent – placeholder conversational support.
@@ -524,9 +520,3 @@ export const tools = {
   documentAgent: documentAgentTool,
   callAgent: callAgentTool,
 } as const;
-
-export type AssistantToolsMessage = UIMessage<
-  never,
-  UIDataTypes,
-  InferUITools<typeof tools>
->;

@@ -1,23 +1,27 @@
 // app/api/assistant/route.ts
 import {
-  convertToModelMessages,
-  stepCountIs,
+  tool,
   streamText,
+  stepCountIs,
   validateUIMessages,
+  type InferUITools,
+  type UIMessage,
+  type UIDataTypes,
 } from "ai";
-import { tools, type AssistantToolsMessage } from "@/lib/ai-tools";
+
+// app/api/assistant/route.ts
+import { streamText, convertToCoreMessages } from "ai";
+import { tools } from "@/lib/ai-tools";
 
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
   const body = await req.json();
 
-  const messages = await validateUIMessages<AssistantToolsMessage>({
-    messages: body.messages,
-    tools,
-  });
+  // Messages coming from the client (useAssistant / useChat)
+  const uiMessages = body.messages ?? [];
 
-  const result = streamText({
+  const result = await streamText({
     model: "openai/gpt-5-mini",
     system: `You are an AI Legal Admin Hub coordinating multiple specialized agents for law firms.
 
@@ -54,17 +58,11 @@ GENERAL GUIDELINES:
 - When helpful, coordinate multiple agents in sequence: for example, intakeAgent → calendarAgent → emailAgent → documentAgent.
 - Always assume that sensitive information must be kept confidential.
 - When unsure which agent to use, first use the receptionist agent to clarify the user's goal, then route to the appropriate specialist agents.`,
-    messages: convertToModelMessages(messages),
-    stopWhen: stepCountIs(8),
+    // 🔑 Convert UI messages (from the React hook) into model messages
+    messages: convertToCoreMessages(uiMessages),
     tools,
   });
 
-  return result.toUIMessageStreamResponse({
-    onFinish: (options) => {
-      console.log("[assistant] Conversation step completed", {
-        usage: options.usage,
-        finishReason: options.finishReason,
-      });
-    },
-  });
+  return result.toAIStreamResponse();
 }
+
